@@ -5,7 +5,7 @@ Merci de votre intérêt. Le projet comporte deux firmwares qui travaillent ense
 | Dossier | Quoi | Langage |
 |---|---|---|
 | `concentrateur-p4/` | Concentrateur de rucher V27 sur ESP32-P4-NANO, avec un coordinateur Zigbee XIAO ESP32-C6 | Rust (`firmware-p4/ruche-core`), C pour le coordinateur |
-| `balance-c6/` | Nœud de pesée Zigbee, XIAO ESP32-C6 + NAU7802 | Arduino (C++) |
+| `balance-c6/` | Nœud de pesée Zigbee, XIAO ESP32-C6 + NAU7802 | Arduino IDE  ou Plateforme IO sous vscode(C++) |
 
 Avant de modifier un comportement, lisez la spec concernée. Elle fait autorité, et une pull request qui s'en écarte doit la mettre à jour dans le même changement :
 - `concentrateur-p4/docs/superpowers/specs/2026-10-21-ruche-cca-v27-01-design.md`
