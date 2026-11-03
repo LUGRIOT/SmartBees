@@ -1,0 +1,12 @@
+# Build ESP-IDF / Rust
+build/
+managed_components/
+target/
+sdkconfig.old
+__pycache__/
+# Secrets mTLS : jamais dans git
+*.key
+
+# Certificats et cles : fournis localement, jamais publies
+*.crt
+*.pem

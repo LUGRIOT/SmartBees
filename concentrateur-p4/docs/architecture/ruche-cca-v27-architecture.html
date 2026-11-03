@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Architecture Ruche CCA V27</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout : document technique en une colonne ; texte a 68ch, schemas pleine largeur (1120px). */
+:root {
+  --paper: #f4f6f3;
+  --panel: #ffffff;
+  --ink: #1c2420;
+  --muted: #59655f;
+  --line: #c8d0cb;
+  --honey: #a8680a;
+  --honey-soft: #f5e6c6;
+  --ok: #2c7a4b;
+  --wait: #2f63a0;
+  --todo: #69727b;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #131816; --panel: #1b221f; --ink: #e5ebe7; --muted: #9ba7a1; --line: #34413b;
+    --honey: #e2a33c; --honey-soft: #3a2b12; --ok: #63c18b; --wait: #82abdc; --todo: #959ea7;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #131816; --panel: #1b221f; --ink: #e5ebe7; --muted: #9ba7a1; --line: #34413b;
+  --honey: #e2a33c; --honey-soft: #3a2b12; --ok: #63c18b; --wait: #82abdc; --todo: #959ea7;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--paper); color: var(--ink);
+  font: 400 15px/1.6 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 56px; }
+section { display: grid; gap: 18px; min-width: 0; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 700; line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 44px); letter-spacing: -0.01em; }
+h2 { font-size: 26px; }
+h3 { font-size: 18px; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 12px/1 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 17px; color: var(--muted); }
+header { display: grid; gap: 12px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font: 400 13px/1.4 var(--f-mono); color: var(--muted); }
+code, .mono { font-family: var(--f-mono); font-size: 0.88em; }
+
+/* --- schemas --- */
+figure { margin: 0; display: grid; gap: 10px; min-width: 0; }
+.scroll { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.scroll svg { display: block; min-width: 860px; width: 100%; height: auto; color: var(--ink); }
+figcaption { font-size: 13px; color: var(--muted); max-width: 90ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font: 400 12px/1.4 var(--f-mono); color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.legend svg { width: 34px; height: 8px; color: var(--ink); }
+
+svg .box { fill: var(--panel); stroke: var(--ink); stroke-width: 1.2; }
+svg .box-inner { fill: var(--paper); stroke: var(--line); stroke-width: 1; }
+svg .box-hot { fill: var(--honey-soft); stroke: var(--honey); stroke-width: 1.8; }
+svg .col { font: 500 11px var(--f-mono); letter-spacing: 0.08em; fill: var(--muted); }
+svg .t { font: 600 14px var(--f-body); fill: var(--ink); }
+svg .s { font: 400 12px var(--f-body); fill: var(--muted); }
+svg .m { font: 400 11.5px var(--f-mono); fill: var(--ink); }
+svg .lab { font: 400 11px var(--f-mono); fill: var(--muted); }
+svg .lab-hot { font: 500 11px var(--f-mono); fill: var(--honey); }
+svg .ln { stroke: var(--ink); stroke-width: 1.3; fill: none; }
+svg .radio { stroke-dasharray: 5 4; }
+svg .hot { stroke: var(--honey); stroke-width: 2.2; }
+svg .ah { fill: var(--ink); }
+svg .ah-hot { fill: var(--honey); }
+
+/* --- couches logicielles --- */
+.stacks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 900px) { .stacks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .stacks { grid-template-columns: minmax(0, 1fr); } }
+.stack { display: grid; grid-template-rows: auto 1fr; gap: 10px; min-width: 0; }
+.stack-head { display: grid; gap: 4px; }
+.stack-head .sub { font: 400 12px/1.4 var(--f-mono); color: var(--muted); }
+.layers { display: grid; gap: 6px; align-content: start; }
+.layer { background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 9px 11px; display: grid; gap: 4px; }
+.layer.core { border-color: var(--honey); }
+.layer .name { font-weight: 600; font-size: 14px; }
+.layer .what { font-size: 13px; color: var(--muted); line-height: 1.45; }
+.layer .what code { color: var(--ink); }
+.chip { justify-self: start; font: 500 11px/1 var(--f-mono); padding: 4px 7px; border-radius: 3px; border: 1px solid currentColor; }
+.chip.ok { color: var(--ok); }
+.chip.wait { color: var(--wait); }
+.chip.todo { color: var(--todo); }
+.chip.buy { color: var(--muted); }
+
+/* --- trajet d'une pesee --- */
+ol.trace { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: hop; }
+.trace li { counter-increment: hop; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; padding-block: 14px; border-top: 1px solid var(--line); }
+.trace li::before { content: counter(hop); font: 600 15px/1 var(--f-mono); color: var(--honey); border: 1.5px solid var(--honey); border-radius: 50%; width: 30px; height: 30px; display: grid; place-items: center; }
+.trace .body { display: grid; gap: 6px; min-width: 0; }
+.trace .who { font-weight: 600; }
+.trace .who .when { font: 400 12px var(--f-mono); color: var(--muted); margin-left: 8px; }
+pre { margin: 0; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--honey); border-radius: 4px; padding: 10px 12px; overflow-x: auto; font: 400 12.5px/1.55 var(--f-mono); color: var(--ink); }
+pre .k { color: var(--muted); }
+
+/* --- deux colonnes : balance et T/H --- */
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+@media (max-width: 820px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+.pair > div { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 10px 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 11px/1.3 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+td code { white-space: nowrap; }
+ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 68ch; }
+.note { font-size: 13px; color: var(--muted); max-width: 68ch; }
+.tag { font: 500 11px var(--f-mono); color: var(--wait); }
+
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">Branche RUCHE-CCA-V27.01 · spec rev 1.1</span>
+  <h1>Architecture Ruche CCA V27</h1>
+  <p class="lede">Un rucher, un concentrateur. Les capteurs Zigbee et le nœud balance parlent au coordinateur XIAO ESP32-C6, qui reste allumé en permanence. L'ESP32-P4 se réveille toutes les 5 minutes, récupère tout, écoute la ruche, puis publie sur le cloud par LTE.</p>
+  <div class="meta"><span>HIVE_ID cca-ruche-0001</span><span>Zigbee 3.0 · canal 11–26</span><span>MQTT mTLS :8883</span><span>cycle 300 s</span></div>
+</header>
+
+<section aria-labelledby="sys">
+  <span class="eyebrow">Vue système</span>
+  <h2 id="sys">Qui parle à qui</h2>
+  <figure>
+    <div class="scroll">
+      <svg viewBox="0 0 1110 600" role="img" aria-label="Schéma système : capteurs T/H et nœud balance envoient leurs reports Zigbee au coordinateur XIAO ESP32-C6, relié par UART et une ligne de réveil à l'ESP32-P4, qui lit le micro, la SD et le BME680 et publie par le modem LTE vers le broker MQTT. Le smartphone active le portail par BLE puis s'y connecte en Wi-Fi.">
+        <defs>
+          <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0 L10 5 L0 10 z"/></marker>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-hot" d="M0 0 L10 5 L0 10 z"/></marker>
+        </defs>
+
+        <text class="col" x="24" y="28">AU RUCHER · RADIO</text>
+        <text class="col" x="360" y="28">CONCENTRATEUR · BOÎTIER</text>
+        <text class="col" x="968" y="28">CLOUD</text>
+
+        <!-- capteurs T/H -->
+        <rect class="box" x="24" y="50" width="210" height="80" rx="5"/>
+        <text class="t" x="38" y="76">Capteurs T/H Zigbee</text>
+        <text class="s" x="38" y="96">Sonoff SNZB-02P, Aqara…</text>
+        <text class="m" x="38" y="116">end device · pile</text>
+
+        <!-- noeud balance -->
+        <rect class="box-hot" x="24" y="196" width="210" height="112" rx="5"/>
+        <text class="t" x="38" y="222">Nœud balance</text>
+        <text class="s" x="38" y="242">XIAO ESP32-C6 + NAU7802</text>
+        <text class="s" x="38" y="260">cellule AL6N 100 kg</text>
+        <text class="m" x="38" y="284">end device · Li-Ion 1S</text>
+
+        <!-- smartphone -->
+        <rect class="box" x="24" y="450" width="210" height="70" rx="5"/>
+        <text class="t" x="38" y="476">Smartphone</text>
+        <text class="s" x="38" y="496">nRF Connect puis navigateur</text>
+
+        <!-- coordinateur -->
+        <rect class="box" x="360" y="150" width="220" height="208" rx="5"/>
+        <text class="t" x="374" y="176">Coordinateur Zigbee</text>
+        <text class="s" x="374" y="195">XIAO ESP32-C6 · firmware C</text>
+        <rect class="box-inner" x="372" y="208" width="196" height="138" rx="3"/>
+        <text class="m" x="382" y="230">ZBOSS · Zigbee 3.0 ZC</text>
+        <text class="m" x="382" y="252">interview + reporting</text>
+        <text class="m" x="382" y="274">anneau 512 reports</text>
+        <text class="m" x="382" y="296">32 appareils (NVS)</text>
+        <text class="m" x="382" y="318">file d'écritures</text>
+        <text class="m" x="382" y="338">BLE · toujours alimenté</text>
+
+        <!-- P4 -->
+        <rect class="box" x="650" y="50" width="270" height="400" rx="5"/>
+        <text class="t" x="664" y="76">ESP32-P4-NANO</text>
+        <text class="s" x="664" y="95">firmware Rust · deep sleep entre cycles</text>
+        <rect class="box-inner" x="662" y="110" width="246" height="132" rx="3"/>
+        <text class="t" x="674" y="133" style="font-size:13px">ruche-fw · drivers</text>
+        <text class="m" x="674" y="156">c6_link  mic  sd</text>
+        <text class="m" x="674" y="176">lte  mqtt  portal</text>
+        <text class="m" x="674" y="196">power  settings</text>
+        <text class="m" x="674" y="226">cycle 5 min</text>
+        <rect class="box-inner" x="662" y="254" width="246" height="182" rx="3" style="stroke:var(--honey)"/>
+        <text class="t" x="674" y="277" style="font-size:13px">ruche-core · logique</text>
+        <text class="m" x="674" y="300">c6_proto  bridge  zcl</text>
+        <text class="m" x="674" y="320">names  config</text>
+        <text class="m" x="674" y="340">audio  alarm</text>
+        <text class="m" x="674" y="360">payload</text>
+        <text class="lab-hot" x="674" y="420">41 tests · fait</text>
+
+        <!-- peripheriques P4 -->
+        <rect class="box" x="650" y="500" width="82" height="56" rx="5"/>
+        <text class="t" x="691" y="524" text-anchor="middle" style="font-size:13px">INMP441</text>
+        <text class="s" x="691" y="543" text-anchor="middle">micro</text>
+        <rect class="box" x="744" y="500" width="82" height="56" rx="5"/>
+        <text class="t" x="785" y="524" text-anchor="middle" style="font-size:13px">Carte SD</text>
+        <text class="s" x="785" y="543" text-anchor="middle">WAV · file</text>
+        <rect class="box" x="838" y="500" width="82" height="56" rx="5"/>
+        <text class="t" x="879" y="524" text-anchor="middle" style="font-size:13px">BME680</text>
+        <text class="s" x="879" y="543" text-anchor="middle">T · HR · P</text>
+
+        <!-- modem + broker -->
+        <rect class="box" x="968" y="50" width="132" height="84" rx="5"/>
+        <text class="t" x="980" y="76">Broker MQTT</text>
+        <text class="s" x="980" y="96">mqtt.example.com</text>
+        <text class="m" x="980" y="118">mTLS 8883</text>
+        <rect class="box" x="968" y="226" width="132" height="66" rx="5"/>
+        <text class="t" x="980" y="252">Modem A7672E</text>
+        <text class="s" x="980" y="272">LTE Cat-1 · bande 20</text>
+
+        <!-- liens radio capteurs -> coordinateur -->
+        <path class="ln radio" d="M234 90 H312 V182 H356" marker-end="url(#a)"/>
+        <text class="lab" x="240" y="82">T · HR</text>
+        <path class="ln radio hot" d="M234 240 H356" marker-end="url(#ah)"/>
+        <text class="lab-hot" x="240" y="232">poids (kg)</text>
+        <path class="ln radio" d="M356 282 H238" marker-end="url(#a)"/>
+        <text class="lab" x="244" y="300">réglages en file</text>
+        <path class="ln radio" d="M234 474 H312 V330 H356" marker-end="url(#a)"/>
+        <text class="lab" x="318" y="400">BLE</text>
+        <text class="lab" x="318" y="414">passkey</text>
+
+        <!-- smartphone -> P4 wifi -->
+        <path class="ln radio" d="M234 500 H624 V430 H646" marker-end="url(#a)"/>
+        <text class="lab" x="380" y="492">Wi-Fi AP · page de gestion (HTTP)</text>
+
+        <!-- coordinateur <-> P4 -->
+        <path class="ln hot" d="M580 196 H646" marker-end="url(#ah)"/>
+        <text class="lab-hot" x="586" y="188">reports</text>
+        <path class="ln" d="M650 220 H584" marker-end="url(#a)"/>
+        <text class="lab" x="586" y="236">requêtes</text>
+        <text class="lab" x="586" y="256">UART JSON</text>
+        <path class="ln" d="M580 312 H646" marker-end="url(#a)"/>
+        <text class="lab" x="586" y="304">GPIO5</text>
+        <text class="lab" x="586" y="328">réveil</text>
+
+        <!-- peripheriques -> P4 -->
+        <path class="ln" d="M691 500 V454" marker-end="url(#a)"/>
+        <text class="lab" x="697" y="482">I2S</text>
+        <path class="ln" d="M785 500 V454" marker-start="url(#a)" marker-end="url(#a)"/>
+        <text class="lab" x="791" y="482">SDMMC</text>
+        <path class="ln" d="M879 500 V454" marker-end="url(#a)"/>
+        <text class="lab" x="885" y="482">I2C</text>
+
+        <!-- P4 -> modem -> broker -->
+        <path class="ln hot" d="M920 259 H964" marker-end="url(#ah)"/>
+        <text class="lab-hot" x="924" y="251">USB</text>
+        <text class="lab-hot" x="924" y="275">PPP</text>
+        <path class="ln radio hot" d="M1034 226 V138" marker-end="url(#ah)"/>
+        <text class="lab-hot" x="1040" y="186">LTE</text>
+      </svg>
+    </div>
+    <div class="legend" aria-hidden="true">
+      <span><svg viewBox="0 0 34 8"><line x1="0" y1="4" x2="34" y2="4" stroke="currentColor" stroke-width="1.5"/></svg>câble</span>
+      <span><svg viewBox="0 0 34 8"><line x1="0" y1="4" x2="34" y2="4" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4"/></svg>radio</span>
+      <span><svg viewBox="0 0 34 8"><line x1="0" y1="4" x2="34" y2="4" stroke="var(--honey)" stroke-width="2.4"/></svg>trajet d'une pesée</span>
+    </div>
+    <figcaption>Le réseau Zigbee ne dépend jamais de l'éveil du P4 : le coordinateur garde les reports en mémoire pendant que le P4 dort, puis les lui donne au réveil.</figcaption>
+  </figure>
+</section>
+
+<section aria-labelledby="layers">
+  <span class="eyebrow">Couches logicielles</span>
+  <h2 id="layers">Ce qui tourne sur chaque appareil</h2>
+  <div class="stacks">
+    <div class="stack">
+      <div class="stack-head"><h3>Capteur T/H</h3><span class="sub">appareil du commerce</span></div>
+      <div class="layers">
+        <div class="layer"><span class="name">Firmware fabricant</span><span class="what">Mesure, pile, appairage par appui long</span></div>
+        <div class="layer"><span class="name">Clusters ZCL standard</span><span class="what"><code>0x0402</code> température, <code>0x0405</code> humidité, <code>0x0001</code> batterie</span></div>
+        <div class="layer"><span class="name">Zigbee 3.0 · end device</span><span class="what">Pile CR2450 ou CR2477</span></div>
+        <span class="chip buy">à acheter</span>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="stack-head"><h3>Nœud balance</h3><span class="sub">XIAO ESP32-C6 · Arduino</span></div>
+      <div class="layers">
+        <div class="layer"><span class="name">BalanceRuche.ino</span><span class="what">Pesée (4 jetés, moyenne de 10), report à chaque réveil, écoute 5 s, mode réglage 180 s</span></div>
+        <div class="layer"><span class="name">Adafruit NAU7802</span><span class="what">I2C <code>0x2A</code>, gain 128, 10 SPS, LDO 3,0 V, power-down entre deux pesées</span></div>
+        <div class="layer"><span class="name">Core esp32 3.3.8 · Zigbee ED</span><span class="what">6 endpoints : poids + 5 réglages, deep sleep</span></div>
+        <span class="chip ok">firmware écrit</span>
+        <span class="chip wait">recette au banc Z2M à faire</span>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="stack-head"><h3>Coordinateur</h3><span class="sub">XIAO ESP32-C6 · C</span></div>
+      <div class="layers">
+        <div class="layer"><span class="name">uart_proto · ble_portal</span><span class="what">Lignes JSON vers le P4, file d'écritures vers le nœud balance, BLE avec passkey, impulsion de réveil</span></div>
+        <div class="layer"><span class="name">zb_interview · report_ring · dev_table</span><span class="what">Basic, endpoints, bind, reporting ; anneau de 512 reports</span></div>
+        <div class="layer"><span class="name">esp-zigbee-lib + ZBOSS · ZC</span><span class="what">Forme le réseau, permit join 1–254 s</span></div>
+        <span class="chip wait">spike S3, puis plan 2</span>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="stack-head"><h3>ESP32-P4-NANO</h3><span class="sub">Rust · esp-idf-svc</span></div>
+      <div class="layers">
+        <div class="layer"><span class="name">ruche-fw</span><span class="what">Cycle 5 min, UART C6, I2S, SD, PPP + MQTT, portail Wi-Fi</span></div>
+        <div class="layer core"><span class="name">ruche-core</span><span class="what">Protocole C6, converters ZCL façon Zigbee2MQTT, pont, audio, alarme, payloads</span></div>
+        <div class="layer"><span class="name">ESP-IDF 5.5 + composants C</span><span class="what"><code>esp_hosted</code>, <code>esp_modem</code>, <code>usb_host_cdc_acm</code></span></div>
+        <span class="chip ok">ruche-core fait · 41 tests</span>
+        <span class="chip wait">ruche-fw : spikes S1 et S2, puis plan 3</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="trace">
+  <span class="eyebrow">Une mesure, de bout en bout</span>
+  <h2 id="trace">Trajet d'une pesée jusqu'au cloud</h2>
+  <p>Exemple réel de format à chaque étape. Le nœud balance pèse la ruche n°1 à 41,853 kg ; le P4 se réveille 122 secondes plus tard.</p>
+  <ol class="trace">
+    <li><div class="body">
+      <span class="who">Nœud balance<span class="when">t = 0</span></span>
+      <p>Réveil par son timer (toutes les 3600 s par défaut). 4 échantillons du NAU7802 jetés, moyenne de 10, offset et échelle appliqués. Il envoie le report, attend l'acquittement, écoute 5 s au cas où un réglage l'attend, puis se rendort.</p>
+      <pre><span class="k">cluster</span> 0x000C Analog Input  <span class="k">attribut</span> 0x0055 PresentValue
+<span class="k">type</span>    0x39 float simple     <span class="k">valeur</span>   41.853</pre>
+    </div></li>
+    <li><div class="body">
+      <span class="who">Coordinateur C6<span class="when">t = 0</span></span>
+      <p>Reçoit le report et le range dans l'anneau avec un numéro de séquence. Rien ne part tant que le P4 ne le demande pas.</p>
+      <pre><span class="k">anneau[10201]</span> = { ieee 0x00124b0012345678, ep 1, cl 0x000C, at 0x0055, v 41.853, lqi 176 }</pre>
+    </div></li>
+    <li><div class="body">
+      <span class="who">P4 → C6 par UART<span class="when">t = 122 s · réveil timer</span></span>
+      <p>Le P4 demande tout ce qui est arrivé depuis le dernier report déjà traité. Le C6 calcule l'âge du report au moment de l'envoi.</p>
+      <pre>→ {"id":3,"cmd":"reports","after":10200,"max":64}
+← {"id":3,"seq":10201,"ieee":"0x00124b0012345678","ep":1,"cl":12,"at":85,"ty":57,"v":41.853,"lqi":176,"age_s":122}
+← {"id":3,"end":10201,"more":false}</pre>
+    </div></li>
+    <li><div class="body">
+      <span class="who">ruche-core sur le P4</span>
+      <p><code>c6_proto</code> valide la ligne, <code>bridge</code> date la mesure (maintenant − 122 s), <code>zcl</code> la convertit. Le modèle <code>CCA-RUCHE-WEIGHT</code> fait de la valeur un poids en kg. <code>Bridge::weight_kg</code> retient ce nœud, seul nœud de pesée, et la mesure a moins de 2 h.</p>
+      <pre>weight = 41.85   <span class="k">(arrondi 2 décimales, âge 122 s ≤ 7200 s)</span></pre>
+    </div></li>
+    <li><div class="body">
+      <span class="who">MQTT par LTE</span>
+      <p>Deux publications : le topic historique de la ruche, avec <code>weight_kg</code> comme en v3, et le topic de l'appareil, façon Zigbee2MQTT.</p>
+      <pre>ruche/cca-ruche-0001/data
+  {"hive_id":"cca-ruche-0001","temperature":24.1,"humidity":58,"weight_kg":41.85,"sound_hz":248,"db_level":62.3,…}
+ruche/cca-ruche-0001/zigbee/balance_r1
+  {"weight":41.85,"battery":92,"linkquality":176,"last_seen":1792540678}</pre>
+    </div></li>
+    <li><div class="body">
+      <span class="who">Si le réseau LTE manque</span>
+      <p>Les deux messages vont dans la file de la carte SD et repartent au cycle suivant, dans l'ordre, les alarmes en premier. Le numéro 10201 n'est marqué traité qu'une fois publié ou écrit sur la SD.</p>
+      <pre>/sdcard/queue/000124.json</pre>
+    </div></li>
+  </ol>
+</section>
+
+<section aria-labelledby="devices">
+  <span class="eyebrow">Les deux types d'appareils Zigbee</span>
+  <h2 id="devices">Nœud balance et capteurs T/H</h2>
+  <div class="pair">
+    <div>
+      <h3>Nœud balance · projet ESP32-C6-BalanceRuche</h3>
+      <p>Firmware Arduino écrit à part, avec sa propre spec. Le concentrateur lit son poids comme celui de n'importe quel capteur standard, et lui envoie ses réglages depuis le portail.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Élément</th><th>Référence</th></tr></thead>
+        <tbody>
+          <tr><td>Carte</td><td>Seeed XIAO ESP32-C6, antenne U.FL</td></tr>
+          <tr><td>Convertisseur</td><td>Adafruit NAU7802, 24 bits</td></tr>
+          <tr><td>Capteur</td><td>Variohm AL6N-C3-100kg, 2,0 mV/V, 350 Ω, 6 fils, ≈ 21 475 points/kg</td></tr>
+          <tr><td>Batterie</td><td>Li-Ion 1S, 3,0 à 4,2 V, avec interrupteur</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Endpoints Zigbee</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>EP</th><th>Cluster</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Analog Input <code>0x000C</code></td><td><code>weight</code> en kg, reporté</td></tr>
+          <tr><td>1</td><td>Power Config <code>0x0001</code></td><td>batterie %, reportée</td></tr>
+          <tr><td>1</td><td>Basic <code>0x0000</code></td><td>modèle <code>CCA-RUCHE-WEIGHT</code>, nom en <code>0x0010</code></td></tr>
+          <tr><td>2</td><td>Analog Output <code>0x000D</code></td><td><code>tare</code> (écriture)</td></tr>
+          <tr><td>3</td><td>Analog Output</td><td><code>calibration_kg</code>, masse connue &gt; 0</td></tr>
+          <tr><td>4</td><td>Analog Output</td><td><code>interval_s</code>, 60 à 86 400 s</td></tr>
+          <tr><td>5</td><td>Analog Output</td><td><code>offset</code>, zéro brut</td></tr>
+          <tr><td>6</td><td>Analog Output</td><td><code>scale</code>, points par kg, ≥ 1000</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Câblage</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Liaison</th><th>Raccordement</th></tr></thead>
+        <tbody>
+          <tr><td>NAU7802 SDA / SCL</td><td>D4 (GPIO22) / D5 (GPIO23)</td></tr>
+          <tr><td>NAU7802 VIN / GND</td><td>3V3 / GND du XIAO</td></tr>
+          <tr><td>AL6N, 6 fils</td><td>E+ et Sense+ → E+ ; E− et Sense− → E− ; S+ → A+ ; S− → A− ; blindage à GND côté carte</td></tr>
+          <tr><td>Batterie +</td><td>interrupteur, puis pastille BAT+</td></tr>
+          <tr><td>Batterie −</td><td>pastille BAT−</td></tr>
+          <tr><td>Mesure batterie</td><td>pont 200 kΩ / 200 kΩ vers A0 (GPIO0), 100 nF</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Comportement</h3>
+      <ul class="plain">
+        <li>Cycle normal : réveil toutes les <code>interval_s</code> (3600 s par défaut), environ 4 s d'éveil, puis 5 s d'écoute des réglages.</li>
+        <li>Interrupteur sur marche : <strong>mode réglage</strong> de 180 s, avec une pesée toutes les 10 s. C'est le moment d'appairer, de tarer et d'étalonner.</li>
+        <li>Interrupteur sur arrêt : le nœud est hors tension et la batterie ne se décharge pas, mais l'USB-C ne la recharge plus. Le remettre sur marche avant de recharger.</li>
+        <li>Batterie sous 3,30 V : la radio n'est pas démarrée et le nœud se rendort.</li>
+        <li>Appui de 10 s sur BOOT : le nœud quitte le réseau ; tare et étalonnage restent en mémoire.</li>
+        <li>Autonomie estimée : 8 à 9 mois par 1000 mAh à 3600 s.</li>
+      </ul>
+      <h3>Réglages depuis le portail</h3>
+      <p>Le nœud n'écoute que pendant ses quelques secondes d'éveil. Le coordinateur garde donc chaque réglage en file et le lui envoie dès qu'il reçoit sa pesée suivante.</p>
+      <pre>POST /api/zigbee/devices/0x…5678/set  {"tare":true}
+← {"queued":["tare"]}
+<span class="k">… au réveil suivant du nœud …</span>
+C6 → P4  {"ev":"write_done","ieee":"0x…5678","ep":2,"cl":13,"at":85,"ok":true}</pre>
+    </div>
+    <div>
+      <h3>Capteurs température / humidité</h3>
+      <p>Tout capteur qui respecte les clusters ZCL standard fonctionne sans code supplémentaire. Ceux qui passent par le cluster propriétaire Tuya <code>0xEF00</code> ne sont pas pris en charge en V27.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Modèle</th><th>Clusters</th><th>V27</th></tr></thead>
+        <tbody>
+          <tr><td>Sonoff SNZB-02P / 02D</td><td>T, HR, batterie</td><td><span class="chip ok">oui</span></td></tr>
+          <tr><td>Aqara WSDCGQ11LM</td><td>T, HR, pression</td><td><span class="chip ok">oui</span></td></tr>
+          <tr><td>Tuya TS0201</td><td>T, HR (standard)</td><td><span class="chip ok">oui</span></td></tr>
+          <tr><td>Tuya TS0601</td><td><code>0xEF00</code></td><td><span class="chip todo">non</span></td></tr>
+        </tbody>
+      </table></div>
+      <h3>Reporting configuré par le coordinateur</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Mesure</th><th>min / max</th><th>Seuil</th></tr></thead>
+        <tbody>
+          <tr><td>Température <code>0x0402</code></td><td>60 s / 900 s</td><td>Δ 0,2 °C</td></tr>
+          <tr><td>Humidité <code>0x0405</code></td><td>60 s / 900 s</td><td>Δ 1 %</td></tr>
+          <tr><td>Batterie <code>0x0001</code></td><td>60 s / 3600 s</td><td>—</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Appairage depuis le portail</h3>
+      <ul class="plain">
+        <li>Onglet Zigbee, « Ouvrir l'inclusion 180 s ».</li>
+        <li>Appui long sur le bouton du capteur jusqu'au clignotement.</li>
+        <li>Le capteur apparaît sous son adresse IEEE ; le renommer, par exemple <code>th_couvain_r1</code>.</li>
+      </ul>
+      <pre>ruche/cca-ruche-0001/zigbee/th_couvain_r1
+  {"temperature":34.6,"humidity":61.2,"battery":87,"voltage":2950,"linkquality":176,"last_seen":1792540678}</pre>
+      <p class="note">Un capteur placé dans la ruche, au-dessus du couvain, doit lire environ 34 à 35 °C. Un capteur sous le plateau donne l'ambiance du rucher.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="topics">
+  <span class="eyebrow">Ce qui arrive sur le cloud</span>
+  <h2 id="topics">Topics MQTT</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Topic</th><th>Contenu</th><th>QoS</th></tr></thead>
+    <tbody>
+      <tr><td><code>ruche/&lt;id&gt;/data</code></td><td>Synthèse de la ruche : champs v3, dont <code>weight_kg</code>, plus audio et état Zigbee</td><td>0</td></tr>
+      <tr><td><code>ruche/&lt;id&gt;/zigbee/&lt;nom&gt;</code></td><td>Dernières valeurs d'un appareil Zigbee</td><td>0</td></tr>
+      <tr><td><code>ruche/&lt;id&gt;/alarm</code></td><td>Alarme acoustique : <code>raised</code>, <code>active</code>, <code>cleared</code></td><td>1</td></tr>
+      <tr><td><code>ruche/&lt;id&gt;/bridge/state</code></td><td>Santé du concentrateur, versions, erreurs, file SD (retained)</td><td>0</td></tr>
+      <tr><td><code>ruche/&lt;id&gt;/bridge/devices</code></td><td>Liste des appareils appairés (retained)</td><td>1</td></tr>
+      <tr><td><code>ruche/&lt;id&gt;/bridge/event</code></td><td>Appareil arrivé, parti, interview échouée</td><td>0</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+</div>
+</html>

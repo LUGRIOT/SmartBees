@@ -1,0 +1,20 @@
+ESP32-P4-NANO (Header gauche)         Capteurs
+─────────────────────────────         ────────
+ 3V3 ──────────────────────────────── VCC (BME680 + HX711 + INMP441)
+ GPIO7  (SDA) ─────────────────────── BME680 SDA
+ GPIO8  (SCL) ─────────────────────── BME680 SCL
+ GPIO5  ───────────────────────────── HX711 DOUT
+ GPIO20 ───────────────────────────── INMP441 SD (data)
+ GPIO21 ───────────────────────────── INMP441 SCK (BCLK)
+ GPIO22 ───────────────────────────── INMP441 WS (LRCK)
+ GND ──────────────────────────────── GND (tous) + INMP441 L/R
+
+ESP32-P4-NANO (Header droite)
+──────────────────────────────
+ GPIO0  ───────────────────────────── Bouton debug (= BOOT, pull-up interne)
+ GPIO6  ───────────────────────────── HX711 SCK
+
+ESP32-P4-NANO (Onboard)
+────────────────────────
+ USB-A OTG ────────────────────────── Modem A7672E (cable USB)
+ Slot micro-SD ────────────────────── Carte SD (inserer directement)
