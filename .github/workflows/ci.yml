@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ruche-core:
+    name: Concentrateur - ruche-core (Rust)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: concentrateur-p4/firmware-p4/ruche-core
+    steps:
+      - uses: actions/checkout@v4
+      # Version epinglee : une nouvelle version stable peut ajouter des lints clippy
+      # et casser la CI sans changement de code. A monter volontairement.
+      - name: Toolchain Rust 1.94.1
+        run: |
+          rustup toolchain install 1.94.1 --profile minimal --component clippy,rustfmt
+          rustup default 1.94.1
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked
+
+  balance:
+    name: Balance - calculs et controles du sketch
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: balance-c6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tests de scale_math (g++)
+        run: |
+          mkdir -p build
+          g++ -std=c++17 -Wall -Wextra tests/test_scale_math.cpp -o build/test_scale_math
+          build/test_scale_math
+      - name: Controles statiques du sketch
+        run: sh tests/check_sketch.sh

@@ -27,6 +27,10 @@ g++ -std=c++17 balance-c6/tests/test_scale_math.cpp -o /tmp/t && /tmp/t
 
 Aucun certificat, clé ni mot de passe n'est publié. Les certificats mTLS et les secrets de chaque ruche sont provisionnés hors du dépôt (spec §5.1).
 
+## Contribuer
+
+Voir [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 ## Licence
 
 MIT, voir [`LICENSE`](LICENSE).
